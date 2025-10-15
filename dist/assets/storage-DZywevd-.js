@@ -1,1 +1,0 @@
-const s="geminiApiKey",a="chatHistory";async function e(t){await chrome.storage.sync.set({[s]:t})}async function n(){return(await chrome.storage.sync.get(s))?.[s]??null}async function o(t){await chrome.storage.local.set({[a]:t})}async function c(){return(await chrome.storage.local.get(a))?.[a]??[]}export{c as a,o as b,n as g,e as s};

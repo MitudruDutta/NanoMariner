@@ -9,16 +9,32 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "jsonrepair": "^3.13.1",
+    "posthog-js": "^1.275.3",
+    "puppeteer-core": "^22.15.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "webextension-polyfill": "^0.12.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
-    "@types/node": "^22.7.5",
+    "@langchain/anthropic": "^0.3.31",
+    "@langchain/cerebras": "^0.0.4",
+    "@langchain/core": "^0.3.78",
+    "@langchain/deepseek": "^0.1.0",
+    "@langchain/google-genai": "^0.2.18",
+    "@langchain/groq": "^0.2.4",
+    "@langchain/ollama": "^0.2.4",
+    "@langchain/openai": "^0.6.16",
+    "@langchain/xai": "^0.1.0",
     "@types/chrome": "^0.0.270",
+    "@types/node": "^22.7.5",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@types/webextension-polyfill": "^0.10.7",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
@@ -26,5 +42,3 @@
     "vite": "^5.4.1"
   }
 }
-
-
