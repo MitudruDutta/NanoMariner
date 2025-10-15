@@ -8,8 +8,6 @@ export default defineConfig({
     rollupOptions: {
       // Disable code-splitting so content/background are single classic files
       output: {
-        format: 'iife',
-        inlineDynamicImports: true,
         entryFileNames: (chunk) => {
           const name = chunk.name || 'index'
           return `${name}.js`

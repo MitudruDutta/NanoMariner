@@ -3,8 +3,28 @@
 
 declare const ai: any;
 declare const LanguageModel: any;
+import { getApiKey } from './storage'
 
 export async function runGeminiPrompt(prompt: string): Promise<string> {
+  // If user set an API key, prefer cloud Gemini via REST
+  const apiKey = await getApiKey()
+  if (apiKey) {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + encodeURIComponent(apiKey), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }]}]
+      })
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Gemini API error: ${res.status} ${text}`)
+    }
+    const data = await res.json()
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    if (text) return String(text)
+  }
+
   // Preferred: new Prompt API
   if ('LanguageModel' in globalThis && typeof (LanguageModel?.availability) === 'function') {
     const available = await LanguageModel.availability();
