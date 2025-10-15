@@ -1,95 +1,128 @@
-## NanoMariner
+# NanoMariner
 
-NanoMariner is a Chrome extension (Manifest V3) built with Vite, React, TypeScript and Tailwind CSS. It demonstrates using Chrome's on-device Gemini Nano via the Prompt API to run short text-generation tasks from a popup UI, and optionally uses the Summarizer API from a content script to summarize web pages.
+NanoMariner is a local-first Chrome extension (Manifest V3) that demonstrates browser automation and on-device AI features. It uses Vite + React + TypeScript + Tailwind for the popup UI and leverages Chrome extension APIs (background service worker, content scripts, sidePanel support). The project includes integrations for both on-device AI (Gemini Nano / Prompt API) and optional summarization flows.
 
-The extension is intended as a small, local-first example of integrating on-device AI features in a browser extension without needing an external API key.
+Badges
+------
+[![version](https://img.shields.io/badge/version-0.1.0-lightgrey)](#) [![license](https://img.shields.io/badge/license-MIT-blue)](#)
 
-## Key features
+Quick summary
+-------------
+- Frontend: React + Vite + TypeScript
+- Styling: TailwindCSS
+- Background: service worker (background.iife.js / background.js built by Vite)
+- Content script: `contentScript` entry (runs on page frames, exposes a `get_page_text` message)
+- Build: Vite multi-entry; outputs `dist/` with `manifest.json`, popup, background, content script and assets
 
-- Popup UI that creates text sessions with the on-device Gemini Nano (via `ai.createTextSession()`)
-- Content script action to summarize the current page using `ai.summarizer.summarize()` (when available)
-- Background service worker to route messages between the popup and content script
-- Vite multi-entry build that outputs per-entry bundles for the extension
+Prerequisites
+-------------
+- Node.js (recommended v18+)
+- npm
+- Chrome 128+ or Chrome Canary (for on-device AI features and sidePanel support)
 
-## Requirements
-
-- Chrome 128+ (or Chrome Canary) with on-device AI enabled and the relevant flags for Prompt API / Summarizer API.
-- No external API key required; the extension uses only Chrome's on-device APIs.
-
-NOTE: On-device models and preview APIs are behind feature flags and may change. If a feature doesn't work, check Chrome flags and that the on-device model is downloaded.
-
-## Quick start (development)
-
-1. Install dependencies
-
+Install
+-------
 ```bash
 npm install
 ```
 
-2. Start the dev server (Vite)
+Development
+-----------
+Start the Vite dev server (serves popup UI during development):
 
 ```bash
 npm run dev
 ```
 
-3. Load the extension in Chrome (development flow)
-
-- Build or generate the `dist/` output (Vite dev server may already provide assets at a local URL):
+To build the extension for testing in Chrome (produces `dist/`):
 
 ```bash
 npm run build
 ```
 
-- Open Chrome → chrome://extensions → enable Developer mode → Load unpacked → choose the `dist/` folder inside this repository.
+Loading in Chrome (development / manual testing)
+-----------------------------------------------
+1. Run `npm run build` to generate `dist/`.
+2. Open Chrome and go to chrome://extensions.
+3. Enable *Developer mode*.
+4. Click *Load unpacked* and select the repository's `dist/` folder.
 
-On successful load you'll see the extension icon in the toolbar. Open the popup to interact with Gemini Nano.
+Notes about the build and manifest
+----------------------------------
+- `vite.config.ts` contains a build plugin which generates a static `manifest.json` into `dist/` during the build step. The rollup inputs include:
+  - popup (`index.html`)
+  - background (`src/background-simple.ts`)
+  - contentScript (`src/contentScript.ts`)
+  - options (`options.html`)
 
-## Build for production
+- The project also contains a JavaScript manifest generator at the root (`manifest` code) which produces a manifest programmatically (side-panel and Opera sidebar helpers). The generated manifest used by Vite is simplified and written to `dist/`.
 
-```bash
-npm run build
-```
+What the extension does
+----------------------
+- Popup UI: creates short Gemini text sessions using `ai.createTextSession()` (when on-device APIs are available) and displays responses.
+- Content script: listens for messages (e.g. `get_page_text`) and returns page text and title; it can also attempt to run summarization using Chrome's Summarizer API if enabled.
+- Background service worker: coordinates long-running tasks, manages an Executor for automation tasks (see `src/background/index.ts`), initializes analytics, and integrates with the `sidePanel` connection.
+- Agent system: under `src/background/agent` there's an agent runtime (executor, planner, navigator) that can run automated tasks on pages using provider-configured LLMs and local browser automation.
 
-The production-ready extension files will be in the `dist/` folder (configured via Vite). Use that folder when loading the unpacked extension.
+Key commands
+------------
+- npm run dev — start Vite dev server
+- npm run build — build extension into `dist/`
+- npm run preview — preview the built site (Vite preview)
 
-## Project layout
+Project layout (high level)
+--------------------------
+- `manifest.json` / manifest generator — extension metadata and permissions
+- `vite.config.ts` — Vite config and build manifest generator
+- `index.html` — popup HTML entry
+- `options.html` — options page HTML
+- `public/` — static public assets (icons, permission pages, helper scripts)
+- `src/` — main source code
+  - `background/` — background service worker code and agent system (executor, agents, prompts, messages)
+  - `background-simple.ts` — small background entry used for the Vite build
+  - `contentScript.ts` — content script entry (responds to `get_page_text`)
+  - `popup/` and `options/` — UI React components
+  - `compat/` — shimbed Node/browser modules used in the extension build
+  - `services/` — analytics, speech-to-text and other services
+  - `browser/` — helpers for page interaction, DOM views, and context management
+  - `styles/` — Tailwind CSS entry
+- `CONTRIBUTING.md` — contribution guidelines
 
-Files and folders you'll commonly work with:
+Permissions & runtime notes
+---------------------------
+The manifest requests several broad permissions needed for automation and page interaction:
+- `storage`, `scripting`, `tabs`, `activeTab`, `debugger`, `unlimitedStorage`, `webNavigation` and host permissions for `<all_urls>`.
 
-- `manifest.json` — extension manifest (MV3)
-- `index.html` — Vite entry HTML
-- `vite.config.ts` — Vite configuration and multi-entry setup
-- `src/main.tsx` — main popup or UI entry (React)
-- `src/popup/Popup.tsx` — Popup React component
-- `src/background.ts` — background service worker (message routing)
-- `src/contentScript.ts` — content script (page summarization action)
-- `src/gemini.ts` — helper utilities for interacting with Chrome's AI APIs
-- `src/styles/index.css` — Tailwind entry styles
+Side panel and Opera / Firefox support
+-------------------------------------
+- The project includes helpers to add a `side_panel` (Chrome) and an `sidebar_action` for Opera. These are conditionally added by the manifest generator. Firefox does not support sidePanel.
 
-## Troubleshooting
+On-device AI (Gemini) and Summarizer
+-----------------------------------
+- The code references on-device APIs (Prompt API and Summarizer API). These are experimental and require a Chrome build and flags. If the popup reports "Gemini not ready", make sure the on-device model is downloaded and Chrome's AI settings/flags are enabled.
 
-- "Gemini not ready" in popup: make sure the on-device model is downloaded. Visit chrome://settings/ai or chrome://flags to check on-device AI settings (flag names may change).
-- Summarizer API errors: the Summarizer API may be experimental or behind flags. If it fails, the content script will return a friendly fallback message.
-- Build/load errors: ensure `npm install` completed successfully and that you point Chrome at the `dist/` directory after running `npm run build`.
+Troubleshooting
+---------------
+- Build errors: ensure `npm install` completed and Node version is compatible with project deps.
+- "Gemini not ready": ensure on-device model is installed and Chrome flags are set. The Summarizer API may require additional flags or Chrome Canary.
+- Content script access errors: when testing local files, ensure the loaded page matches the `content_scripts` matches or use the `activeTab` flow.
 
-## Contributing
+Contributing
+------------
+See `CONTRIBUTING.md` for the recommended workflow. Short summary:
 
-Contributions are welcome. Small improvements that help others run the project locally are especially appreciated (docs, clearer error messages, and simple test coverage).
+1. Fork and create a feature branch.
+2. Keep PRs small and focused.
+3. Run `npm install` and `npm run dev` to test UI changes; use `npm run build` to produce `dist/` for extension testing.
 
-Suggested steps:
+License
+-------
+No LICENSE file is included by default. If you want an open-source license, common choices are MIT or Apache-2.0 — tell me which and I'll add a `LICENSE` file.
 
-1. Fork the repo and create a feature branch.
-2. Make your change, add tests where appropriate.
-3. Open a pull request describing the change.
+Contact / help
+---------------
+If you'd like, I can:
+- Add a `TROUBLESHOOTING.md` that lists the exact Chrome flags and steps to enable on-device AI.
+- Generate a real set of badges (publish/NPM/CI) once you have CI or a package registry configured.
+- Create a small GitHub Action to build `dist/` for releases.
 
-## License
-
-Specify license information here (e.g. MIT) or add a LICENSE file to the repo.
-
----
-
-If you'd like, I can also:
-
-- Add a short CONTRIBUTING.md with a recommended development flow.
-- Wire up a simple automated build script or GitHub Action to produce the `dist/` artifacts.
-- Add a troubleshooting section that lists the exact Chrome flags and where to enable on-device AI (if you want me to look them up).
